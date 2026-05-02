@@ -2,6 +2,8 @@
 
 Terraform configuration that provisions a MySQL 8.0 RDS instance inside an existing VPC, with a custom parameter group, a dedicated DB subnet group, and a security group that restricts port 3306 access to the VPC CIDR only.
 
+A secure, private MySQL 8.0 RDS database locked inside an existing AWS VPC. It deploys the instance across a dedicated DB subnet group for high availability and applies a custom parameter group tuned for optimal application performance. To enforce strict access control, it configures a Security Group that only allows inbound connections on port 3306 originating from the VPC's internal network.
+
 Intended as a dev/staging template. See the Notes section before using in production.
 
 ## What It Provisions
