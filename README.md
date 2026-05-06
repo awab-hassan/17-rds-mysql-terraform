@@ -1,16 +1,18 @@
-# Project # 17: RDS MYSQL Deployment using terraform
+# Project 17: Secure RDS MySQL Deployment with Terraform
 
-Terraform configuration that provisions a MySQL 8.0 RDS instance inside an existing VPC, with a custom parameter group, a dedicated DB subnet group, and a security group that restricts port 3306 access to the VPC CIDR only.
+This Terraform setup spins up a private, locked-down MySQL 8.0 RDS instance right inside your existing VPC. It’s basically a dev or staging template out of the box. The database sits in a dedicated DB subnet group for high availability, and I've tied it to a custom parameter group to squeeze out better application performance from the jump. 
 
-A secure, private MySQL 8.0 RDS database locked inside an existing AWS VPC. It deploys the instance across a dedicated DB subnet group for high availability and applies a custom parameter group tuned for optimal application performance. To enforce strict access control, it configures a Security Group that only allows inbound connections on port 3306 originating from the VPC's internal network.
+For security, we're keeping it strictly internal. The security group drops everything except traffic hitting port 3306 from inside the VPC itself. Zero public exposure. 
 
-Intended as a dev/staging template. See the Notes section before using in production.
+## Architecture
+
+![Architecture Diagram](architecture.png)
 
 ## What It Provisions
 
-- **Security group** — allows inbound MySQL (port 3306) from the VPC CIDR block only. No public exposure.
-- **DB subnet group** — places the instance across the provided subnet IDs.
-- **Custom parameter group** (MySQL 8.0) — tuned for application workloads:
+- **Security Group:** Hardens the perimeter. Allows inbound MySQL connections (port 3306) strictly from your VPC CIDR block. 
+- **DB Subnet Group:** Spreads the instance across the subnet IDs you feed it.
+- **Custom Parameter Group (MySQL 8.0):** I tweaked a few defaults to better handle standard app workloads:
 
   | Parameter | Value | Apply method |
   |---|---|---|
@@ -20,7 +22,7 @@ Intended as a dev/staging template. See the Notes section before using in produc
   | `max_allowed_packet` | 256 MB | immediate |
   | `innodb_log_file_size` | 1 GB | pending-reboot |
 
-- **RDS instance** — MySQL 8.0, `db.t3.micro`, 20 GB storage, `publicly_accessible = false`, VPC-internal only.
+- **RDS Instance:** The actual database. Defaults to a `db.t3.micro` with 20 GB of storage. I explicitly set `publicly_accessible = false` so it stays completely off the public internet.
 
 ## Stack
 
@@ -37,18 +39,7 @@ Terraform 1.x · AWS RDS (MySQL 8.0) · VPC · Security Groups
 | `db_username` | Master database username |
 | `db_password` | Master database password |
 
-Pass credentials via `terraform.tfvars` or the `TF_VAR_db_password` environment variable. Never commit plaintext credentials.
-
-## Repository Layout
-
-```
-rds-mysql-terraform/
-├── main.tf
-├── variables.tf
-├── terraform.tfvars.example
-├── .gitignore
-└── README.md
-```
+Make sure to pass your credentials using `terraform.tfvars` or the `TF_VAR_db_password` environment variable. Please don't commit plaintext passwords to git—we've all been there, and it's a massive pain to clean up.
 
 ## Deployment
 
@@ -60,7 +51,9 @@ terraform apply
 
 ## Notes
 
-- `skip_final_snapshot = true` — safe for dev/staging. Set to `false` in production to prevent data loss on `terraform destroy`.
-- `allocated_storage = 20 GB` and `db.t3.micro` are suitable for development. Resize before promoting to production.
-- `innodb_log_file_size` requires a reboot to apply (`pending-reboot`). Plan for a maintenance window when changing this parameter.
-- The egress rule allows all outbound traffic. Restrict if your security policy requires it.
+A few things to keep in mind before you run this:
+
+- I set `skip_final_snapshot = true` because it makes tearing down dev environments way faster. If you push this to production, flip that to `false` so you don't accidentally nuke your data during a `terraform destroy`.
+- The default `db.t3.micro` instance and 20 GB of storage are just for kicking the tires. You'll definitely need to size up before handling real traffic.
+- Keep an eye on `innodb_log_file_size`. Changing it requires a full database reboot (`pending-reboot`), so you'll need to schedule a maintenance window if you tweak it later.
+- Outbound traffic (egress) is currently wide open. If your security team is strict, you'll want to lock that down in the security group rules.
