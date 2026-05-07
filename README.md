@@ -1,8 +1,6 @@
 # Project 17: Secure RDS MySQL Deployment with Terraform
 
-This Terraform setup deploys a private MySQL 8.0 RDS instance right inside our VPC. It’s basically a dev or staging template out of the box. The database resides in a dedicated DB subnet group for high availability, and its attached to a custom parameter group for better performance. 
-
-For security, we're keeping it strictly internal. The security group drops everything except traffic hitting port 3306 from inside the VPC itself. Zero public exposure. 
+This Terraform setup deploys a private MySQL 8.0 RDS instance right inside our VPC. It’s basically a dev or staging template out of the box. The database resides in a dedicated DB subnet group for high availability, and its attached to a custom parameter group for better performance. For security, we're keeping it strictly internal. The security group drops everything except traffic hitting port 3306 from inside the VPC itself. Zero public exposure. 
 
 ## Architecture
 
